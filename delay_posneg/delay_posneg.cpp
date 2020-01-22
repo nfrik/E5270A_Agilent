@@ -36,17 +36,16 @@
 #include "E5270_TIS.h"  
 
 
-void MeasureIVTriangle(double Vbase, double Vmax, double Vdstep, int halfperiods, int negative, double Hold, double Delay, int pins[], const char *fname, double vrange, double irange) {
+void MeasureIVTriangle(double Vbase, double Vmax, double Vdstep, int halfperiods, int * negative, double *Hold, double *Delay, int pins[], const char *fname, double vrange, double irange) {
 
 	/*negative=  0 -> positive and negative sweeps will follow each other if halfperiods is greater than 1
 	negative=  1 -> inverted sweeps i.e. -Vmax will be sent
 	negative= -1 -> original sweeps s i.e. Vmax will be sent*/
 
 	printf(fname);
-
 	int const N = 1001;
 	int const Nmeas = 30;
-	int    points = (int)(abs(Vmax - Vbase) / Vdstep + 1.5);
+	int    points =  (int)(abs(Vmax - Vbase) / Vdstep + 1.5);
 	int	   port[1];
 
 	double measure[Nmeas][N]; //sweep values with type set by set_iv
@@ -92,20 +91,25 @@ void MeasureIVTriangle(double Vbase, double Vmax, double Vdstep, int halfperiods
 	//	double time_stamp, ira, voltage;
 
 	FILE   *pFile;
-	pFile = fopen(fname, "w");
+	pFile = fopen(fname, "w"); 
+	//if (fopen(fname, "w") == NULL)
+	//	printf("file did not open!!!\n");
+	////printf("File will be saved %s\n",fname);
 
 	set_timestamp(1);
 	reset_timestamp();
 
-	force_v(Wire, Vbase, vrange, REMAIN);
+	force_v(Wire, Vbase, vrange, 0.2);// apply the voltage with the base Vbase with maximum range of Vrange ( if zero = auto ranging mode ) from the port Wire.
+										//	to change the maximum measured current the last parameter which is the compliance can be changed, if put it REMAIN it is automatically fixed according to last measurements which was 100uA, Now I cahnged it to 0.2
 
 	printf("\n");
 	for (int i = 0; i<halfperiods; i++) {
 		printf("Current halfperiod: %d\n", i);
-
+		
 		//force_v(Drive, Vbase, vrange, REMAIN);
 
-		set_iv(Drive, LINEAR_V_DBL, vrange, Vbase, Vmax*((negative == 0) ? pow(-1, i) : negative), points, Hold, Delay, REMAIN, 0.0, COMP_CONT);
+		set_iv(Drive, LINEAR_V_DBL, vrange, Vbase, Vmax*((negative[i] == 0) ? pow(-1, i) : negative[i]), points, Hold[i], Delay[i], 0.2, 0.0, COMP_CONT); // 0.2 is the complience which was REMAIN
+		// if negative == 0 then the stop point will be -1^i  else the stop point will be equal to negative 
 
 		sweep_iv(Drive, I_MEAS, irange, measure[i], source[i], NULL);
 
@@ -149,11 +153,11 @@ void MeasureIR(int samples, int pins[], double vset, double vrange, double irang
 
 
 #ifdef E5270_TIS_H
-	/*
-	*! Don't use the SMU port number directly. You should use a variable which
-	*! have a SMU port number. It's useful for porting to 4070 system which
-	*! is diffrent configuration with E5270. [Recommendation]
-	*/
+	//
+	// Don't use the SMU port number directly. You should use a variable which
+	// have a SMU port number. It's useful for porting to 4070 system which
+	// is diffrent configuration with E5270. [Recommendation]
+	//
 	int smuD = SMU1;
 	int smuW = SMU2;
 
@@ -324,16 +328,19 @@ int main()
 	//|sample id|_|composition|_|pins|_|measurement_number|.txt
 	//no4_agar04_12mwnt_6cb_4wo3_pin3_4_meas32.txt
 
-	const char fname[] = "2D_Ag_Ag2S_Ni_glass_12122019_1005_2.txt";
+	const char fname[] = "2D_Ag_Ag2S_Ni_glass_12122019_1009.txt";
 	//const char fname[] = "AgZnOAg_01312019_519.txt";
 	const double vrange = 0;
 	const double irange = 0;
-	const int vdirection = -1;
-
+	const int halfperiods = 10;
+	double Hold[halfperiods] = { 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
+	double Delay[halfperiods] = { 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01 };
+	int vdirection[halfperiods] = { 1, -1, 1, -1, 1, -1, 1, -1, 1, -1 };
 	//(double Vbase, double Vmax, double Vdstep, int halfperiods, int negative, double Hold, double Delay, int pins[], const char *fname, double vrange, double irange) {
-	MeasureIVTriangle(0, 3, 5e-1, 10, vdirection, 0.0001, 0.001, pins, fname, vrange, irange);
-
-
+	MeasureIVTriangle(0, 2, 5e-1, halfperiods, vdirection, Hold, Delay, pins, fname, vrange, irange);
+	//FILE   *pFile;
+	//pFile = fopen(fname, "w");
+	//fprintf(pFile, "file created\n");
 	//MeasureIR(1000,pins,0,vrange,irange,fname);
 	//MeasureIR(pins);
 

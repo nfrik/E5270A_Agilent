@@ -324,11 +324,11 @@ int main()
 	//|sample id|_|composition|_|pins|_|measurement_number|.txt
 	//no4_agar04_12mwnt_6cb_4wo3_pin3_4_meas32.txt
 
-	const char fname[] = "2D_Ag_Ag2S_Ni_glass_12122019_1005_2.txt";
+	const char fname[] = "2D_Ag_Ag2S_Ni_glass_12122019_1010.txt";
 	//const char fname[] = "AgZnOAg_01312019_519.txt";
 	const double vrange = 0;
 	const double irange = 0;
-	const int vdirection = -1;
+	const int vdirection = 0;
 
 	//(double Vbase, double Vmax, double Vdstep, int halfperiods, int negative, double Hold, double Delay, int pins[], const char *fname, double vrange, double irange) {
 	MeasureIVTriangle(0, 3 , 5e-1, 10, vdirection, 0.0001, 0.001, pins, fname, vrange, irange);
